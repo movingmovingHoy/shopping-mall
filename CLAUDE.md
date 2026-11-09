@@ -36,6 +36,7 @@ com.example.shop.global.{web|exception|config}
 
 - Controller는 요청 검증과 응답 변환만 한다. 비즈니스 로직은 Service 또는 도메인 객체에 둔다.
 - 요청/응답은 DTO로 주고받는다. 도메인 객체를 응답으로 직접 반환하지 않는다.
+- DTO에 `record`를 쓰지 않고 일반 클래스로 작성한다. 응답 DTO는 `final` 필드 + `@Getter` + 정적 팩토리(`of`/`from`), 요청 DTO는 `@Getter` + `@NoArgsConstructor`.
 - 요청 DTO는 Bean Validation(`@NotBlank`, `@Min` 등)으로 검증한다.
 - 도메인 객체에 무분별한 setter를 열지 않는다. 상태 변경은 의미 있는 메서드(`decreaseStock`, `cancel`)로 한다.
 - `@Transactional`은 Service 계층에 붙이고, 조회 전용 메서드는 `readOnly = true`를 쓴다.
@@ -64,6 +65,7 @@ com.example.shop.global.{web|exception|config}
 - 기능을 추가하면 테스트도 함께 작성한다.
 - 서비스 테스트는 정상 케이스와 실패 케이스(재고 부족, 권한 없음, 중복 가입 등)를 둘 다 작성한다.
 - Mapper 테스트는 테스트용 DB(로컬 MySQL의 `shop_test` 데이터베이스)를 쓰고 테스트마다 롤백한다.
+- HTTP 응답 자체를 검증해야 하는 웹 계층(ApiExceptionHandler, 인터셉터 등)은 `@WebMvcTest` + `MockMvc`로 테스트한다.
 
 ## Git 규칙
 
