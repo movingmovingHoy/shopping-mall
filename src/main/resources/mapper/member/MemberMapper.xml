@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.member.mapper.MemberMapper">
+
+    <!-- useGeneratedKeys: AUTO_INCREMENT로 생성된 id를 member 객체의 id 필드에 넣어 준다 -->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO member (email, password, name, role)
+        VALUES (#{email}, #{password}, #{name}, #{role})
+    </insert>
+
+    <!-- 개수를 세는 COUNT(*) 대신 EXISTS: 하나라도 찾으면 바로 멈춘다 -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM member WHERE email = #{email})
+    </select>
+
+    <!-- created_at → createdAt 은 map-underscore-to-camel-case 설정으로 자동 매핑 -->
+    <select id="findById" resultType="com.example.shop.member.domain.Member">
+        SELECT id, email, password, name, role, created_at
+        FROM member
+        WHERE id = #{id}
+    </select>
+
+</mapper>
