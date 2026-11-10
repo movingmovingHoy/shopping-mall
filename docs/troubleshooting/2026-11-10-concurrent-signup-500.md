@@ -46,7 +46,7 @@ try {
 
 ## 배운 점
 - 중복을 막는 최종 방어선은 **DB 제약 조건(UK)**이다. `existsByEmail` 같은 앱 쪽 체크는 대부분의 경우에 친절한 응답을 빨리 주기 위한 용도다.
-- ` 락은 DB가 INSERT/UPDATE/DELETE, `SELECT ... FOR UPDATE`에서 건다.
+- 락은 DB가 INSERT/UPDATE/DELETE, `SELECT ... FOR UPDATE`에서 건다.
 - 자바 `synchronized`는 서버가 여러 대면 못 막는다. DB는 하나라서 UK가 막는다.
 - 예외는 **처리할 수 있는 것만 좁게** 잡는다.
 - 사용자용 정보는 응답에, 개발자용 정보는 로그에 남긴다.
