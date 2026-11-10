@@ -6,8 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.dao.DuplicateKeyException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * @MybatisTest: MyBatis 관련 빈만 띄우고, 테스트마다 자동으로 롤백한다.
@@ -45,5 +47,19 @@ class MemberMapperTest {
 
         assertThat(memberMapper.existsByEmail("user@test.com")).isTrue();
         assertThat(memberMapper.existsByEmail("none@test.com")).isFalse();
+    }
+
+    /**
+     * MemberServiceMockTest는 "같은 이메일로 save하면 DuplicateKeyException이 난다"고 가정했다.
+     * 그 가정이 진짜 DB에서도 맞는지 확인한다. (existsByEmail을 거치지 않고 save를 바로 두 번)
+     * - schema.sql에서 uk_member_email이 빠지면 → 예외가 안 나서 실패
+     * - 다른 예외 타입으로 바뀌면 → Service의 catch에 안 걸리므로 여기서 실패
+     */
+    @Test
+    void 같은_이메일로_두_번_저장하면_DuplicateKeyException() {
+        memberMapper.save(Member.create("user@test.com", "encoded-password", "홍길동"));
+
+        assertThatThrownBy(() -> memberMapper.save(Member.create("user@test.com", "other-password", "김철수")))
+                .isInstanceOf(DuplicateKeyException.class);
     }
 }
