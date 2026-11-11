@@ -20,4 +20,11 @@
         WHERE id = #{id}
     </select>
 
+    <!-- email에는 UNIQUE KEY가 있어서 결과는 최대 1건이다 -->
+    <select id="findByEmail" resultType="com.example.shop.member.domain.Member">
+        SELECT id, email, password, name, role, created_at
+        FROM member
+        WHERE email = #{email}
+    </select>
+
 </mapper>

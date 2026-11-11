@@ -18,4 +18,7 @@ public interface MemberMapper {
     boolean existsByEmail(String email);
 
     Optional<Member> findById(Long id);
+
+    /** 로그인용. 비밀번호 비교를 위해 password까지 조회한다 */
+    Optional<Member> findByEmail(String email);
 }

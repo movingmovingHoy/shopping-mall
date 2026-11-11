@@ -4,6 +4,7 @@ import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
 import com.example.shop.member.domain.Member;
 import com.example.shop.member.domain.Role;
+import com.example.shop.member.dto.LoginRequest;
 import com.example.shop.member.dto.MemberResponse;
 import com.example.shop.member.dto.MemberSignupRequest;
 import com.example.shop.member.mapper.MemberMapper;
@@ -67,4 +68,32 @@ class MemberServiceTest {
                 .isEqualTo(ErrorCode.DUPLICATE_EMAIL);
     }
 
+    @Test
+    void 로그인_성공() {
+        MemberResponse signed = memberService.signup(new MemberSignupRequest("user@test.com", "password123", "홍길동"));
+
+        MemberResponse response = memberService.login(new LoginRequest("user@test.com", "password123"));
+
+        assertThat(response.getId()).isEqualTo(signed.getId());
+        assertThat(response.getEmail()).isEqualTo("user@test.com");
+    }
+
+    @Test
+    void 없는_이메일로_로그인하면_예외() {
+        assertThatThrownBy(() -> memberService.login(new LoginRequest("none@test.com", "password123")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.LOGIN_FAILED);
+    }
+
+    @Test
+    void 비밀번호가_틀리면_예외() {
+        memberService.signup(new MemberSignupRequest("user@test.com", "password123", "홍길동"));
+
+        // 없는 이메일과 "같은" ErrorCode가 나와야 한다 → 가입 여부를 알아낼 수 없음
+        assertThatThrownBy(() -> memberService.login(new LoginRequest("user@test.com", "wrong-password")))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.LOGIN_FAILED);
+    }
 }

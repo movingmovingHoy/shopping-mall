@@ -65,7 +65,7 @@ public class ApiExceptionHandler {
         log.error("Unexpected exception", e);
         return toResponse(ErrorCode.INTERNAL_ERROR);
     }
-
+//code -> status 입력됨
     private ResponseEntity<ErrorResponse> toResponse(ErrorCode code) {
         return ResponseEntity.status(code.getStatus()).body(ErrorResponse.of(code));
     }
