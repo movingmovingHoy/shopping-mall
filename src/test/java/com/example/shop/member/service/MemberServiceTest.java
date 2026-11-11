@@ -96,4 +96,23 @@ class MemberServiceTest {
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.LOGIN_FAILED);
     }
+
+    @Test
+    void 내_정보_조회() {
+        MemberResponse signed = memberService.signup(new MemberSignupRequest("user@test.com", "password123", "홍길동"));
+
+        MemberResponse response = memberService.getMyInfo(signed.getId());
+
+        assertThat(response.getEmail()).isEqualTo("user@test.com");
+        assertThat(response.getName()).isEqualTo("홍길동");
+    }
+
+    @Test
+    void 없는_회원_id로_조회하면_예외() {
+        // 세션에는 id가 남아 있는데 회원이 사라진 상황
+        assertThatThrownBy(() -> memberService.getMyInfo(999_999L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.MEMBER_NOT_FOUND);
+    }
 }

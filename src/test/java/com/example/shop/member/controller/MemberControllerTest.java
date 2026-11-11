@@ -2,6 +2,7 @@ package com.example.shop.member.controller;
 
 import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
+import com.example.shop.global.web.LoginSessionManager;
 import com.example.shop.member.domain.Member;
 import com.example.shop.member.dto.MemberResponse;
 import com.example.shop.member.service.MemberService;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -16,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -82,5 +85,31 @@ class MemberControllerTest {
                 .andExpect(status().isConflict())                        // 409
                 .andExpect(jsonPath("$.code").value("DUPLICATE_EMAIL"))
                 .andExpect(jsonPath("$.message").value("이미 가입된 이메일입니다."));
+    }
+
+    /**
+     * 세션에 넣은 회원 id(1L)가 @Login을 거쳐 서비스까지 전달되는지 확인한다.
+     * (@WebMvcTest가 WebMvcConfig도 띄우므로 인터셉터와 ArgumentResolver가 실제와 똑같이 동작한다)
+     */
+    @Test
+    void 로그인했으면_내_정보를_응답한다() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(LoginSessionManager.LOGIN_MEMBER_ID, 1L);
+        MemberResponse response = MemberResponse.from(Member.create("user@test.com", "encoded", "홍길동"));
+        given(memberService.getMyInfo(1L)).willReturn(response);
+
+        mockMvc.perform(get("/api/members/me").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("user@test.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+
+        verify(memberService).getMyInfo(1L);   // 세션의 id가 그대로 넘어갔는지
+    }
+
+    @Test
+    void 로그인_안_했으면_내_정보_조회는_401() throws Exception {
+        mockMvc.perform(get("/api/members/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("LOGIN_REQUIRED"));
     }
 }

@@ -1,9 +1,13 @@
 package com.example.shop.global.config;
 
 import com.example.shop.global.web.LoginCheckInterceptor;
+import com.example.shop.global.web.LoginMemberArgumentResolver;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
 
 /**
  * 인터셉터 등록. (다음에 만들 AdminCheckInterceptor, @Login ArgumentResolver도 여기에 등록한다)
@@ -27,5 +31,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/products",        // 상품 목록/상세는 누구나 조회
                         "/api/products/**"
                 );
+    }
+
+    /** 컨트롤러 파라미터의 @Login Long memberId에 값을 넣어 줄 리졸버를 등록한다 */
+    @Override
+    public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
+        resolvers.add(new LoginMemberArgumentResolver());
     }
 }

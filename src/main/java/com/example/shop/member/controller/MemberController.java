@@ -1,5 +1,6 @@
 package com.example.shop.member.controller;
 
+import com.example.shop.global.web.Login;
 import com.example.shop.member.dto.MemberResponse;
 import com.example.shop.member.dto.MemberSignupRequest;
 import com.example.shop.member.service.MemberService;
@@ -7,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,5 +30,14 @@ public class MemberController {
     public ResponseEntity<MemberResponse> signup(@Valid @RequestBody MemberSignupRequest request) {
         MemberResponse response = memberService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 내 정보 조회. 로그인 안 했으면 LoginCheckInterceptor가 먼저 401로 막는다.
+     * @Login 덕분에 HttpSession을 직접 꺼내지 않고 회원 id만 받는다.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<MemberResponse> me(@Login Long memberId) {
+        return ResponseEntity.ok(memberService.getMyInfo(memberId));
     }
 }

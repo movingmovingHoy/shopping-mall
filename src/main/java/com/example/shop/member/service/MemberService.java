@@ -81,4 +81,12 @@ public class MemberService {
 
         return MemberResponse.from(member);
     }
+
+    /** 내 정보 조회. memberId는 컨트롤러가 @Login으로 세션에서 받아 온 값이다 */
+    @Transactional(readOnly = true)
+    public MemberResponse getMyInfo(Long memberId) {
+        Member member = memberMapper.findById(memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+        return MemberResponse.from(member);
+    }
 }

@@ -23,7 +23,9 @@ public enum ErrorCode {
     // 이메일이 없을 때와 비밀번호가 틀릴 때를 구분하지 않는다 (가입된 이메일인지 알아내지 못하게)
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
     // 로그인이 필요한 API에 세션 없이 요청했을 때 (LoginCheckInterceptor)
-    LOGIN_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+    LOGIN_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    // 세션에는 회원 id가 있는데 DB에 회원이 없을 때 (로그인 중 회원이 삭제된 경우 등)
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
