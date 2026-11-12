@@ -1,5 +1,6 @@
 package com.example.shop.global.config;
 
+import com.example.shop.global.web.AdminCheckInterceptor;
 import com.example.shop.global.web.LoginCheckInterceptor;
 import com.example.shop.global.web.LoginMemberArgumentResolver;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 /**
- * 인터셉터 등록. (다음에 만들 AdminCheckInterceptor, @Login ArgumentResolver도 여기에 등록한다)
+ * 인터셉터(로그인 검사, 관리자 검사)와 @Login ArgumentResolver 등록.
  *
  * "로그인 필요한 URL을 나열"하지 않고 "/api/** 전체에 걸고, 로그인 없이 쓰는 URL만 제외"한다.
  * 새 API를 만들 때 등록을 깜빡해도 기본값이 '막힘'이라 안전하다. (반대로 하면 깜빡한 API가 그대로 열린다)
@@ -31,6 +32,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
                         "/api/products",        // 상품 목록/상세는 누구나 조회
                         "/api/products/**"
                 );
+
+        // 관리자 API만 검사한다. /api/admin/** 은 위에서 제외하지 않았으므로 로그인 검사를 먼저 통과한 요청만 온다.
+        registry.addInterceptor(new AdminCheckInterceptor())
+                .order(2)
+                .addPathPatterns("/api/admin/**");
     }
 
     /** 컨트롤러 파라미터의 @Login Long memberId에 값을 넣어 줄 리졸버를 등록한다 */
