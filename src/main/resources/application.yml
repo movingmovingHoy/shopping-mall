@@ -6,6 +6,9 @@ spring:
   sql:
     init:
       mode: always
+      # schema.sql/data.sql을 읽을 인코딩. 지정하지 않으면 JVM 기본값(Windows 한글판은 MS949)으로 읽어서
+      # UTF-8로 저장된 data.sql의 한글이 깨진 채로 DB에 들어간다.
+      encoding: UTF-8
 
 server:
   servlet:

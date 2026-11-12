@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.product.mapper.ProductMapper">
+
+    <!-- status는 enum이지만 MyBatis가 name()("ON_SALE")으로 바꿔서 넣어 준다. created_at은 DB 기본값 사용 -->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO product (category_id, name, price, stock_quantity, status, description)
+        VALUES (#{categoryId}, #{name}, #{price}, #{stockQuantity}, #{status}, #{description})
+    </insert>
+
+    <!-- category_id → categoryId, stock_quantity → stockQuantity 는 map-underscore-to-camel-case로 자동 매핑 -->
+    <select id="findById" resultType="com.example.shop.product.domain.Product">
+        SELECT id, category_id, name, price, stock_quantity, status, description, created_at
+        FROM product
+        WHERE id = #{id}
+    </select>
+
+</mapper>

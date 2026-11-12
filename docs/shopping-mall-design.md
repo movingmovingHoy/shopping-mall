@@ -151,6 +151,10 @@ MyBatis Mapper XML은 `resources/mapper/{도메인}/` 아래에 둔다.
 - UPDATE 쿼리를 명시적으로 작성한다.
 - `@Transactional` 범위를 서비스 계층에서 명확히 잡는다. (주문 생성: 재고 차감 + 주문 저장 + 장바구니 비우기가 한 트랜잭션)
 - 스키마는 `schema.sql`로 관리한다. 개발 단계에서는 앱 실행마다 `DROP TABLE IF EXISTS` 후 다시 생성한다. (필요해지면 Flyway 검토)
+- 초기 데이터는 `data.sql`로 넣는다. (schema.sql 다음에 실행, 테스트 DB에도 똑같이 들어감)
+  - 카테고리 3개(의류, 전자기기, 도서): 카테고리 생성 API는 MVP 범위 밖이다.
+  - 관리자 계정 `admin@shop.com` / `admin1234`: 회원가입은 항상 USER로 만들고, 관리자로 바꾸는 API도 없기 때문이다.
+  - `spring.sql.init.encoding: UTF-8` 필수. 지정하지 않으면 Windows에서 MS949로 읽어 한글이 깨진다.
 - 설정은 `application.yml`에 둔다. MyBatis는 `mybatis.configuration.map-underscore-to-camel-case: true`로 설정한다.
 - Mapper 통합 테스트는 로컬 MySQL의 `shop_test` 데이터베이스를 사용한다.
 
