@@ -32,7 +32,8 @@ public enum ErrorCode {
 
     // 상품
     // 상품 등록 시 없는 categoryId를 보냈을 때. 미리 확인하지 않으면 FK 위반 예외가 나서 500으로 응답된다.
-    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

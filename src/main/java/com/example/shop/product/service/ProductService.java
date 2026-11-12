@@ -39,4 +39,18 @@ public class ProductService {
 
         return ProductResponse.from(product);
     }
+
+    /**
+     * 상품 상세 조회. 로그인 없이 누구나 쓸 수 있다. (WebMvcConfig에서 /api/products/** 제외)
+     * 판매중지(STOPPED) 상품도 404로 숨기지 않고 status와 함께 그대로 응답한다.
+     *   - 과거 주문 내역에서 상품을 눌렀을 때 "없는 상품"이 아니라 "판매중지된 상품"으로 보여 줄 수 있다.
+     *   - 판매중지라고 화면에 표시할지는 클라이언트가 status를 보고 정한다.
+     *   (주문할 때는 판매중인지 다시 확인해야 한다 → 주문 기능에서 처리)
+     */
+    @Transactional(readOnly = true)
+    public ProductResponse getProduct(Long productId) {
+        Product product = productMapper.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+        return ProductResponse.from(product);
+    }
 }
