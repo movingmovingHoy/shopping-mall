@@ -7,6 +7,7 @@ import com.example.shop.product.dto.ProductCreateRequest;
 import com.example.shop.product.dto.ProductPageResponse;
 import com.example.shop.product.dto.ProductResponse;
 import com.example.shop.product.dto.ProductSearchRequest;
+import com.example.shop.product.dto.ProductUpdateRequest;
 import com.example.shop.product.mapper.CategoryMapper;
 import com.example.shop.product.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,27 @@ public class ProductService {
         Product product = Product.create(request.getCategoryId(), request.getName(), request.getPrice(),
                 request.getStockQuantity(), request.getDescription());
         productMapper.save(product);
+
+        return ProductResponse.from(product);
+    }
+
+    /**
+     * 상품 수정 (관리자). 판매중지와 같은 순서: 조회 → 도메인 메서드로 변경 → UPDATE
+     * 없는 상품이면 404, 바꾸려는 카테고리가 없으면 404 (등록과 같은 이유로 FK 위반 500을 미리 막는다).
+     * 판매중지된 상품도 수정할 수 있다. 상태는 그대로 STOPPED로 남는다.
+     */
+    @Transactional
+    public ProductResponse update(Long productId, ProductUpdateRequest request) {
+        Product product = productMapper.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (!categoryMapper.existsById(request.getCategoryId())) {
+            throw new BusinessException(ErrorCode.CATEGORY_NOT_FOUND);
+        }
+
+        product.update(request.getCategoryId(), request.getName(), request.getPrice(),
+                request.getStockQuantity(), request.getDescription());
+        productMapper.update(product);   // MyBatis는 변경 감지가 없으므로 직접 UPDATE
 
         return ProductResponse.from(product);
     }

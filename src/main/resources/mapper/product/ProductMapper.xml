@@ -27,6 +27,21 @@
     </update>
 
     <!--
+        상품 정보 수정. 파라미터가 Product 객체 하나라서 #{name} = product.getName() (객체 하나 → 필드 이름 규칙)
+        status는 SET에 넣지 않는다. 판매중지는 updateStatus로만 바꾼다.
+        (넣어 두면 수정하는 사이에 다른 관리자가 판매중지한 상품이 다시 ON_SALE로 덮어써질 수 있다)
+    -->
+    <update id="update">
+        UPDATE product
+        SET category_id    = #{categoryId},
+            name           = #{name},
+            price          = #{price},
+            stock_quantity = #{stockQuantity},
+            description    = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <!--
         목록 조회와 개수 조회가 같은 WHERE 조건을 써야 한다.
         두 곳에 따로 쓰면 한쪽만 고쳤을 때 "목록은 3개인데 totalCount는 5" 같은 불일치가 생기므로
         <sql>로 한 번만 정의하고 <include>로 가져다 쓴다.

@@ -65,6 +65,25 @@ class ProductMapperTest {
         assertThat(found.getStockQuantity()).isEqualTo(10);
     }
 
+    @Test
+    void 상품_정보를_수정하면_DB에_반영되고_상태는_바뀌지_않는다() {
+        Product product = Product.create(CATEGORY_ID, "반팔 티셔츠", 15000, 10, "면 100%");
+        productMapper.save(product);
+        product.stop();
+        productMapper.updateStatus(product);   // DB: STOPPED
+
+        product.update(2L, "긴팔 티셔츠", 20000, 5, null);
+        productMapper.update(product);
+
+        Product found = productMapper.findById(product.getId()).orElseThrow();
+        assertThat(found.getCategoryId()).isEqualTo(2L);
+        assertThat(found.getName()).isEqualTo("긴팔 티셔츠");
+        assertThat(found.getPrice()).isEqualTo(20000);
+        assertThat(found.getStockQuantity()).isEqualTo(5);
+        assertThat(found.getDescription()).isNull();
+        assertThat(found.getStatus()).isEqualTo(ProductStatus.STOPPED);   // update 쿼리가 status를 건드리지 않음
+    }
+
     // ===== 목록 조회 (findAll / countAll) =====
     // 테스트마다 롤백되고 data.sql에는 상품이 없으므로, 각 테스트가 넣은 상품만 DB에 있다.
 
