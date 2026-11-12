@@ -28,7 +28,11 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
     // 로그인은 했지만 관리자가 아닌 회원이 /api/admin/** 에 요청했을 때 (AdminCheckInterceptor)
     // 401(누군지 모름)이 아니라 403(누군지는 알지만 권한 없음)
-    ADMIN_REQUIRED(HttpStatus.FORBIDDEN, "관리자 권한이 필요합니다.");
+    ADMIN_REQUIRED(HttpStatus.FORBIDDEN, "관리자 권한이 필요합니다."),
+
+    // 상품
+    // 상품 등록 시 없는 categoryId를 보냈을 때. 미리 확인하지 않으면 FK 위반 예외가 나서 500으로 응답된다.
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "카테고리를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
