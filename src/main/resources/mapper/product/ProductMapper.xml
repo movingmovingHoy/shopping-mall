@@ -26,4 +26,40 @@
         WHERE id = #{id}
     </update>
 
+    <!--
+        목록 조회와 개수 조회가 같은 WHERE 조건을 써야 한다.
+        두 곳에 따로 쓰면 한쪽만 고쳤을 때 "목록은 3개인데 totalCount는 5" 같은 불일치가 생기므로
+        <sql>로 한 번만 정의하고 <include>로 가져다 쓴다.
+
+        <if test="categoryId != null">: categoryId가 null이면 AND 줄이 SQL에서 통째로 빠진다. (동적 SQL)
+          categoryId=1  → WHERE status = 'ON_SALE' AND category_id = ?
+          categoryId 없음 → WHERE status = 'ON_SALE'
+        'ON_SALE'은 사용자 입력이 아니라 고정된 문자열이라 SQL에 그대로 써도 안전하다.
+    -->
+    <sql id="onSaleCondition">
+        WHERE status = 'ON_SALE'
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+    </sql>
+
+    <!--
+        ORDER BY가 필요한 이유: 정렬 없이 LIMIT/OFFSET을 쓰면 DB가 순서를 보장하지 않아서
+        1페이지에 나온 상품이 2페이지에 또 나오거나 빠질 수 있다.
+        id DESC: id는 AUTO_INCREMENT라 클수록 나중에 등록된 상품 = 최신순.
+    -->
+    <select id="findAll" resultType="com.example.shop.product.domain.Product">
+        SELECT id, category_id, name, price, stock_quantity, status, description, created_at
+        FROM product
+        <include refid="onSaleCondition"/>
+        ORDER BY id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM product
+        <include refid="onSaleCondition"/>
+    </select>
+
 </mapper>

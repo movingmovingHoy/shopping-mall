@@ -5,7 +5,9 @@ import com.example.shop.global.exception.ErrorCode;
 import com.example.shop.product.domain.Product;
 import com.example.shop.product.domain.ProductStatus;
 import com.example.shop.product.dto.ProductCreateRequest;
+import com.example.shop.product.dto.ProductPageResponse;
 import com.example.shop.product.dto.ProductResponse;
+import com.example.shop.product.dto.ProductSearchRequest;
 import com.example.shop.product.mapper.ProductMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +81,32 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    @Test
+    void 상품_목록은_페이지_정보와_전체_개수를_함께_응답한다() {
+        registerProduct();
+        registerProduct();
+        registerProduct();
+
+        ProductSearchRequest request = new ProductSearchRequest();
+        request.setPage(1);
+        request.setSize(2);
+
+        ProductPageResponse response = productService.getProducts(request);
+
+        assertThat(response.getProducts()).hasSize(2);   // 이번 페이지는 2개
+        assertThat(response.getTotalCount()).isEqualTo(3);  // 전체는 3개
+        assertThat(response.getPage()).isEqualTo(1);
+        assertThat(response.getSize()).isEqualTo(2);
+    }
+
+    @Test
+    void 상품이_없으면_빈_목록() {
+        ProductPageResponse response = productService.getProducts(new ProductSearchRequest());
+
+        assertThat(response.getProducts()).isEmpty();   // null이 아니라 빈 리스트
+        assertThat(response.getTotalCount()).isZero();
     }
 
     private Long registerProduct() {
