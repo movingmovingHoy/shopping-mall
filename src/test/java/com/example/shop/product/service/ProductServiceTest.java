@@ -53,6 +53,39 @@ class ProductServiceTest {
     }
 
     @Test
+    void 판매중지_성공() {
+        Long productId = registerProduct();
+
+        ProductResponse response = productService.stop(productId);
+
+        assertThat(response.getStatus()).isEqualTo(ProductStatus.STOPPED);
+        // 응답뿐 아니라 DB에도 반영됐는지 (updateStatus 호출을 빼먹으면 여기서 실패)
+        assertThat(productMapper.findById(productId).orElseThrow().getStatus()).isEqualTo(ProductStatus.STOPPED);
+    }
+
+    @Test
+    void 이미_판매중지된_상품도_에러_없이_STOPPED() {
+        Long productId = registerProduct();
+        productService.stop(productId);
+
+        ProductResponse response = productService.stop(productId);
+
+        assertThat(response.getStatus()).isEqualTo(ProductStatus.STOPPED);
+    }
+
+    @Test
+    void 없는_상품을_판매중지하면_PRODUCT_NOT_FOUND() {
+        assertThatThrownBy(() -> productService.stop(999_999L))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    private Long registerProduct() {
+        return productService.register(new ProductCreateRequest(1L, "반팔 티셔츠", 15000, 10, null)).getId();
+    }
+
+    @Test
     void 상품_상세_조회_성공() {
         Long productId = productService.register(
                 new ProductCreateRequest(1L, "반팔 티셔츠", 15000, 10, "면 100%")).getId();

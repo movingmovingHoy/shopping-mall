@@ -47,6 +47,24 @@ public class ProductService {
      *   - 판매중지라고 화면에 표시할지는 클라이언트가 status를 보고 정한다.
      *   (주문할 때는 판매중인지 다시 확인해야 한다 → 주문 기능에서 처리)
      */
+    /**
+     * 판매중지 (관리자). 상품을 지우지 않고 status만 STOPPED로 바꾼다. (설계서: 상품은 물리 삭제하지 않음)
+     * 순서: 조회 → 도메인 메서드로 상태 변경 → UPDATE
+     *   서비스에서 UPDATE 쿼리에 "STOPPED"를 바로 넣지 않고 product.stop()을 거치는 이유:
+     *   "판매중지하면 상태가 어떻게 바뀌는가"라는 규칙을 도메인 객체가 갖게 하려는 것이다.
+     * 이미 판매중지된 상품도 에러 없이 그대로 STOPPED로 응답한다.
+     */
+    @Transactional
+    public ProductResponse stop(Long productId) {
+        Product product = productMapper.findById(productId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.stop();
+        productMapper.updateStatus(product);
+
+        return ProductResponse.from(product);
+    }
+
     @Transactional(readOnly = true)
     public ProductResponse getProduct(Long productId) {
         Product product = productMapper.findById(productId)

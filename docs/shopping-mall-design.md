@@ -105,6 +105,7 @@ erDiagram
 | GET | /api/products/{id} | 상품 상세 |
 | POST | /api/admin/products | 상품 등록 (관리자) |
 | PUT | /api/admin/products/{id} | 상품 수정 (관리자) |
+| POST | /api/admin/products/{id}/stop | 상품 판매중지 (관리자, 이미 중지된 상품도 200) |
 | GET | /api/cart | 장바구니 조회 |
 | POST | /api/cart/items | 장바구니 담기 |
 | PATCH | /api/cart/items/{id} | 수량 변경 |

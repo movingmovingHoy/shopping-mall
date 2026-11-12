@@ -104,6 +104,35 @@ class AdminProductControllerTest {
         verify(productService, never()).register(any());   // 인터셉터에서 막혀 서비스까지 가지 않았는지
     }
 
+    @Test
+    void 관리자가_판매중지하면_200과_STOPPED() throws Exception {
+        Product product = Product.create(1L, "반팔 티셔츠", 15000, 10, null);
+        product.stop();
+        given(productService.stop(1L)).willReturn(ProductResponse.from(product));
+
+        mockMvc.perform(post("/api/admin/products/1/stop").session(loginSession(Role.ADMIN)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("STOPPED"));
+    }
+
+    @Test
+    void 없는_상품을_판매중지하면_404() throws Exception {
+        given(productService.stop(999L)).willThrow(new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        mockMvc.perform(post("/api/admin/products/999/stop").session(loginSession(Role.ADMIN)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("PRODUCT_NOT_FOUND"));
+    }
+
+    @Test
+    void 일반_회원은_판매중지할_수_없다() throws Exception {
+        mockMvc.perform(post("/api/admin/products/1/stop").session(loginSession(Role.USER)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ADMIN_REQUIRED"));
+
+        verify(productService, never()).stop(any());
+    }
+
     private MockHttpSession loginSession(Role role) {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute(LoginSessionManager.LOGIN_MEMBER_ID, 1L);
