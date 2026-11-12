@@ -25,7 +25,10 @@ public enum ErrorCode {
     // 로그인이 필요한 API에 세션 없이 요청했을 때 (LoginCheckInterceptor)
     LOGIN_REQUIRED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
     // 세션에는 회원 id가 있는데 DB에 회원이 없을 때 (로그인 중 회원이 삭제된 경우 등)
-    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다.");
+    MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다."),
+    // 로그인은 했지만 관리자가 아닌 회원이 /api/admin/** 에 요청했을 때 (AdminCheckInterceptor)
+    // 401(누군지 모름)이 아니라 403(누군지는 알지만 권한 없음)
+    ADMIN_REQUIRED(HttpStatus.FORBIDDEN, "관리자 권한이 필요합니다.");
 
     private final HttpStatus status;
     private final String message;

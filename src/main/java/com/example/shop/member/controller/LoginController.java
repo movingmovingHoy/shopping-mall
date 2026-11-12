@@ -30,7 +30,7 @@ public class LoginController {
     public ResponseEntity<MemberResponse> login(@Valid @RequestBody LoginRequest request,
                                                 HttpServletRequest httpRequest) {
         MemberResponse response = memberService.login(request);
-        loginSessionManager.login(httpRequest, response.getId());
+        loginSessionManager.login(httpRequest, response.getId(), response.getRole());
         return ResponseEntity.ok(response);
     }
 

@@ -4,6 +4,7 @@ import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
 import com.example.shop.global.web.LoginSessionManager;
 import com.example.shop.member.domain.Member;
+import com.example.shop.member.domain.Role;
 import com.example.shop.member.dto.MemberResponse;
 import com.example.shop.member.service.MemberService;
 import org.junit.jupiter.api.Test;
@@ -44,7 +45,7 @@ class LoginControllerTest {
     MemberService memberService;
 
     @Test
-    void 로그인_성공하면_200과_세션에_회원id가_저장된다() throws Exception {
+    void 로그인_성공하면_200과_세션에_회원id와_role이_저장된다() throws Exception {
         given(memberService.login(any())).willReturn(memberResponse(1L));
 
         mockMvc.perform(post("/api/login")
@@ -52,8 +53,10 @@ class LoginControllerTest {
                         .content(LOGIN_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("user@test.com"))
+                .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.password").doesNotExist())
-                .andExpect(request().sessionAttribute(LoginSessionManager.LOGIN_MEMBER_ID, 1L));  // 세션에 id 저장됨
+                .andExpect(request().sessionAttribute(LoginSessionManager.LOGIN_MEMBER_ID, 1L))           // 세션에 id 저장됨
+                .andExpect(request().sessionAttribute(LoginSessionManager.LOGIN_MEMBER_ROLE, Role.USER)); // role도 저장됨
     }
 
     @Test
