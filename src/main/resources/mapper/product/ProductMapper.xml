@@ -15,4 +15,15 @@
         WHERE id = #{id}
     </select>
 
+    <!--
+        MyBatis는 JPA처럼 객체 값이 바뀌었다고 자동으로 UPDATE해 주지 않는다(변경 감지 없음).
+        product.stop()으로 객체만 바꾸면 DB는 그대로이므로, 이 UPDATE를 직접 호출해야 한다.
+        status 컬럼만 바꾸는 쿼리라 다른 컬럼(가격, 재고 등)은 건드리지 않는다.
+    -->
+    <update id="updateStatus">
+        UPDATE product
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
 </mapper>

@@ -37,4 +37,14 @@ public class Product {
         product.status = ProductStatus.ON_SALE;
         return product;
     }
+
+    /**
+     * 판매중지. setStatus(STOPPED) 대신 의미 있는 이름의 메서드로 상태를 바꾼다.
+     *   - setter가 있으면 어디서든 아무 상태로나 바꿀 수 있지만, stop()은 "판매중지"라는 한 가지 변경만 허용한다.
+     *   - 나중에 규칙이 생기면(예: 중지 시각 기록) 이 메서드 한 곳만 고치면 된다.
+     * 이미 STOPPED여도 막지 않는다. 다시 호출해도 결과가 같기 때문이다.
+     */
+    public void stop() {
+        this.status = ProductStatus.STOPPED;
+    }
 }

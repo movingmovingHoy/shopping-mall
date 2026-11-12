@@ -50,6 +50,20 @@ class ProductMapperTest {
     }
 
     @Test
+    void 상태를_바꾸면_DB에_반영되고_다른_컬럼은_그대로다() {
+        Product product = Product.create(CATEGORY_ID, "반팔 티셔츠", 15000, 10, "면 100%");
+        productMapper.save(product);
+
+        product.stop();                        // 객체만 바뀐 상태 (DB는 아직 ON_SALE)
+        productMapper.updateStatus(product);   // MyBatis는 직접 UPDATE해야 DB에 반영된다
+
+        Product found = productMapper.findById(product.getId()).orElseThrow();
+        assertThat(found.getStatus()).isEqualTo(ProductStatus.STOPPED);
+        assertThat(found.getPrice()).isEqualTo(15000);       // status만 바꾸는 쿼리인지 확인
+        assertThat(found.getStockQuantity()).isEqualTo(10);
+    }
+
+    @Test
     void 없는_id로_조회하면_빈_Optional() {
         assertThat(productMapper.findById(999_999L)).isEmpty();
     }
