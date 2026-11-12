@@ -47,4 +47,17 @@ public class Product {
     public void stop() {
         this.status = ProductStatus.STOPPED;
     }
+
+    /**
+     * 상품 정보 수정 (관리자). setter 5개를 여는 대신 "상품 정보 수정"이라는 메서드 하나로 묶었다.
+     *   - 무엇을 바꿀 수 있는지가 이 메서드에 다 드러난다. (id, status, createdAt은 여기서 바꿀 수 없다)
+     *   - status는 일부러 뺐다. 판매중지는 stop()으로만 한다.
+     */
+    public void update(Long categoryId, String name, int price, int stockQuantity, String description) {
+        this.categoryId = categoryId;
+        this.name = name;
+        this.price = price;
+        this.stockQuantity = stockQuantity;
+        this.description = description;
+    }
 }

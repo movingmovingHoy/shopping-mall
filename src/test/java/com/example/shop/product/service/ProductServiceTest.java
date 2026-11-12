@@ -8,6 +8,7 @@ import com.example.shop.product.dto.ProductCreateRequest;
 import com.example.shop.product.dto.ProductPageResponse;
 import com.example.shop.product.dto.ProductResponse;
 import com.example.shop.product.dto.ProductSearchRequest;
+import com.example.shop.product.dto.ProductUpdateRequest;
 import com.example.shop.product.mapper.ProductMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,6 +53,44 @@ class ProductServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(ErrorCode.CATEGORY_NOT_FOUND);
+    }
+
+    @Test
+    void 상품_수정_성공() {
+        Long productId = registerProduct();
+
+        ProductResponse response = productService.update(productId,
+                new ProductUpdateRequest(2L, "긴팔 티셔츠", 20000, 5, "기모"));
+
+        assertThat(response.getName()).isEqualTo("긴팔 티셔츠");
+        // 응답뿐 아니라 DB에도 반영됐는지 (productMapper.update 호출을 빼먹으면 여기서 실패)
+        Product saved = productMapper.findById(productId).orElseThrow();
+        assertThat(saved.getCategoryId()).isEqualTo(2L);
+        assertThat(saved.getPrice()).isEqualTo(20000);
+        assertThat(saved.getStockQuantity()).isEqualTo(5);
+        assertThat(saved.getDescription()).isEqualTo("기모");
+    }
+
+    @Test
+    void 없는_상품을_수정하면_PRODUCT_NOT_FOUND() {
+        assertThatThrownBy(() -> productService.update(999_999L,
+                new ProductUpdateRequest(1L, "긴팔 티셔츠", 20000, 5, null)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    @Test
+    void 없는_카테고리로_수정하면_CATEGORY_NOT_FOUND_이고_DB는_그대로() {
+        Long productId = registerProduct();
+
+        assertThatThrownBy(() -> productService.update(productId,
+                new ProductUpdateRequest(999_999L, "긴팔 티셔츠", 20000, 5, null)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.CATEGORY_NOT_FOUND);
+
+        assertThat(productMapper.findById(productId).orElseThrow().getName()).isEqualTo("반팔 티셔츠");
     }
 
     @Test

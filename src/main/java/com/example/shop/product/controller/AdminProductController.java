@@ -2,6 +2,7 @@ package com.example.shop.product.controller;
 
 import com.example.shop.product.dto.ProductCreateRequest;
 import com.example.shop.product.dto.ProductResponse;
+import com.example.shop.product.dto.ProductUpdateRequest;
 import com.example.shop.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -32,6 +34,16 @@ public class AdminProductController {
     public ResponseEntity<ProductResponse> register(@Valid @RequestBody ProductCreateRequest request) {
         ProductResponse response = productService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * 상품 수정. PUT = 전체 교체. 경로의 {id}는 어떤 상품인지, 본문(JSON)은 바꿀 내용이다.
+     * @PathVariable과 @RequestBody를 한 메서드에서 같이 쓴다.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponse> update(@PathVariable("id") Long productId,
+                                                  @Valid @RequestBody ProductUpdateRequest request) {
+        return ResponseEntity.ok(productService.update(productId, request));
     }
 
     /**

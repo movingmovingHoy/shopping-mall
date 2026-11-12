@@ -20,6 +20,9 @@ public interface ProductMapper {
     /** product.status 값으로 DB를 바꾼다. 도메인 메서드(stop 등)로 상태를 바꾼 뒤 호출한다 */
     void updateStatus(Product product);
 
+    /** 상품 정보(카테고리, 이름, 가격, 재고, 설명)를 product 값으로 바꾼다. status는 건드리지 않는다 */
+    void update(Product product);
+
     /**
      * 판매중(ON_SALE) 상품 목록, 최신순. categoryId가 null이면 전체.
      * 파라미터가 여러 개라서 @Param으로 이름표를 붙인다. XML에서는 #{categoryId}, #{size}, #{offset}으로 쓴다.

@@ -27,6 +27,21 @@ class ProductTest {
     }
 
     @Test
+    void 수정하면_정보가_바뀌고_상태는_그대로다() {
+        Product product = Product.create(1L, "반팔 티셔츠", 15000, 10, "면 100%");
+        product.stop();
+
+        product.update(2L, "긴팔 티셔츠", 20000, 5, null);
+
+        assertThat(product.getCategoryId()).isEqualTo(2L);
+        assertThat(product.getName()).isEqualTo("긴팔 티셔츠");
+        assertThat(product.getPrice()).isEqualTo(20000);
+        assertThat(product.getStockQuantity()).isEqualTo(5);
+        assertThat(product.getDescription()).isNull();
+        assertThat(product.getStatus()).isEqualTo(ProductStatus.STOPPED);   // 수정해도 판매 재개되지 않는다
+    }
+
+    @Test
     void 이미_판매중지된_상품을_다시_중지해도_STOPPED() {
         Product product = Product.create(1L, "반팔 티셔츠", 15000, 10, null);
         product.stop();
