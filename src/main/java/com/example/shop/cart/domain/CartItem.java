@@ -27,6 +27,11 @@ public class CartItem {
         return item;
     }
 
+    /** 수량을 주어진 값으로 바꾼다 (장바구니에서 직접 수량 변경). 더하는 addQuantity와 구분한다 */
+    public void changeQuantity(int quantity) {
+        this.quantity = quantity;
+    }
+
     /** 이미 담긴 상품을 또 담았을 때 수량을 더한다 */
     public void addQuantity(int amount) {
         this.quantity += amount;

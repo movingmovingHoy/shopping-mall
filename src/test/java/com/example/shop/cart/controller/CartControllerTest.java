@@ -27,6 +27,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,6 +41,61 @@ class CartControllerTest {
 
     @MockitoBean
     CartService cartService;
+
+    // ===== 수량 변경 =====
+
+    @Test
+    void 수량을_변경하면_200과_바뀐_정보() throws Exception {
+        given(cartService.updateQuantity(eq(1L), eq(10L), any()))
+                .willReturn(CartItemResponse.from(CartItem.create(1L, 5L, 3)));
+
+        mockMvc.perform(patch("/api/cart/items/10").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"quantity": 3}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantity").value(3));
+    }
+
+    @Test
+    void 수량을_0으로_변경하면_400() throws Exception {
+        mockMvc.perform(patch("/api/cart/items/10").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"quantity": 0}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("quantity"));
+
+        verify(cartService, never()).updateQuantity(any(), any(), any());
+    }
+
+    @Test
+    void 남의_항목이거나_없으면_404() throws Exception {
+        given(cartService.updateQuantity(any(), any(), any()))
+                .willThrow(new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        mockMvc.perform(patch("/api/cart/items/999").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"quantity": 1}
+                                """))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("CART_ITEM_NOT_FOUND"));
+    }
+
+    @Test
+    void 수량_변경할_때_로그인하지_않으면_401() throws Exception {
+        mockMvc.perform(patch("/api/cart/items/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"quantity": 1}
+                                """))
+                .andExpect(status().isUnauthorized());
+
+        verify(cartService, never()).updateQuantity(any(), any(), any());
+    }
 
     // ===== 장바구니 조회 =====
 
