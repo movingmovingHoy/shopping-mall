@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.cart.mapper.CartItemMapper">
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_item (member_id, product_id, quantity)
+        VALUES (#{memberId}, #{productId}, #{quantity})
+    </insert>
+
+    <select id="findByMemberIdAndProductId" resultType="com.example.shop.cart.domain.CartItem">
+        SELECT id, member_id, product_id, quantity
+        FROM cart_item
+        WHERE member_id = #{memberId}
+          AND product_id = #{productId}
+    </select>
+
+    <!-- 수량만 바꾼다. 회원/상품은 바뀌지 않는다 -->
+    <update id="updateQuantity">
+        UPDATE cart_item
+        SET quantity = #{quantity}
+        WHERE id = #{id}
+    </update>
+
+</mapper>
