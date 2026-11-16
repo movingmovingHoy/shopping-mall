@@ -14,6 +14,43 @@
           AND product_id = #{productId}
     </select>
 
+    <!--
+        장바구니 조회. 상품 이름/가격이 필요해서 product와 INNER JOIN 한다. (cart_item.product_id는 FK라 상품이 항상 있다)
+        컬럼 별칭(AS)이 DTO 필드 이름으로 매핑된다: product_name → productName, status → productStatus
+        ORDER BY ci.id DESC: 최근에 담은 순. 정렬이 없으면 LIMIT/OFFSET 결과의 순서가 보장되지 않는다.
+    -->
+    <select id="findAllByMemberId" resultType="com.example.shop.cart.dto.CartItemDetail">
+        SELECT ci.id,
+               ci.product_id,
+               p.name     AS product_name,
+               p.price,
+               ci.quantity,
+               p.status   AS product_status
+        FROM cart_item ci
+                 JOIN product p ON p.id = ci.product_id
+        WHERE ci.member_id = #{memberId}
+        ORDER BY ci.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByMemberId" resultType="long">
+        SELECT COUNT(*)
+        FROM cart_item
+        WHERE member_id = #{memberId}
+    </select>
+
+    <!--
+        페이지와 상관없이 장바구니 전체의 합계. 담긴 게 없으면 SUM이 NULL이라 COALESCE로 0으로 바꾼다.
+        price, quantity가 둘 다 INT라 곱셈 결과가 넘치지 않도록 BIGINT로 바꿔서 곱한다. 'ON_SALE'은 고정 문자열이라 안전하다.
+    -->
+    <select id="sumOnSalePriceByMemberId" resultType="long">
+        SELECT COALESCE(SUM(CAST(p.price AS SIGNED) * ci.quantity), 0)
+        FROM cart_item ci
+                 JOIN product p ON p.id = ci.product_id
+        WHERE ci.member_id = #{memberId}
+          AND p.status = 'ON_SALE'
+    </select>
+
     <!-- 수량만 바꾼다. 회원/상품은 바뀌지 않는다 -->
     <update id="updateQuantity">
         UPDATE cart_item

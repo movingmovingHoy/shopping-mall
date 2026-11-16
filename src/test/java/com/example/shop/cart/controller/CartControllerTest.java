@@ -2,12 +2,15 @@ package com.example.shop.cart.controller;
 
 import com.example.shop.cart.domain.CartItem;
 import com.example.shop.cart.dto.CartItemResponse;
+import com.example.shop.cart.dto.CartResponse;
+import com.example.shop.cart.dto.CartSearchRequest;
 import com.example.shop.cart.service.CartService;
 import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
 import com.example.shop.global.web.LoginSessionManager;
 import com.example.shop.member.domain.Role;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
@@ -15,11 +18,15 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,6 +40,55 @@ class CartControllerTest {
 
     @MockitoBean
     CartService cartService;
+
+    // ===== 장바구니 조회 =====
+
+    @Test
+    void 조회하면_200과_목록_합계() throws Exception {
+        given(cartService.getCart(eq(1L), any())).willReturn(
+                CartResponse.of(List.of(), 1, 20, 0, 0));
+
+        mockMvc.perform(get("/api/cart").session(loginSession()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(20))
+                .andExpect(jsonPath("$.totalCount").value(0))
+                .andExpect(jsonPath("$.totalPrice").value(0));
+    }
+
+    @Test
+    void 쿼리_파라미터_page와_size가_서비스까지_전달된다() throws Exception {
+        given(cartService.getCart(any(), any())).willReturn(CartResponse.of(List.of(), 2, 5, 0, 0));
+
+        mockMvc.perform(get("/api/cart?page=2&size=5").session(loginSession()))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<CartSearchRequest> captor = ArgumentCaptor.forClass(CartSearchRequest.class);
+        verify(cartService).getCart(eq(1L), captor.capture());
+        assertThat(captor.getValue().getPage()).isEqualTo(2);   // setter가 없으면 조용히 1로 남는다
+        assertThat(captor.getValue().getSize()).isEqualTo(5);
+    }
+
+    @Test
+    void 조회할_때_로그인하지_않으면_401() throws Exception {
+        mockMvc.perform(get("/api/cart"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("LOGIN_REQUIRED"));
+
+        verify(cartService, never()).getCart(any(), any());
+    }
+
+    @Test
+    void size가_0이면_400() throws Exception {
+        mockMvc.perform(get("/api/cart?size=0").session(loginSession()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("size"));
+
+        verify(cartService, never()).getCart(any(), any());
+    }
+
+    // ===== 장바구니 담기 =====
 
     @Test
     void 로그인한_회원이_담으면_201과_담긴_정보() throws Exception {
