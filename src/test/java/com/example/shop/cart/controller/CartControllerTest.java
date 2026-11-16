@@ -24,11 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,6 +44,34 @@ class CartControllerTest {
 
     @MockitoBean
     CartService cartService;
+
+    // ===== 삭제 =====
+
+    @Test
+    void 삭제하면_204와_빈_본문() throws Exception {
+        mockMvc.perform(delete("/api/cart/items/10").session(loginSession()))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+
+        verify(cartService).delete(1L, 10L);
+    }
+
+    @Test
+    void 삭제할_때_남의_항목이거나_없으면_404() throws Exception {
+        willThrow(new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND)).given(cartService).delete(any(), any());
+
+        mockMvc.perform(delete("/api/cart/items/999").session(loginSession()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("CART_ITEM_NOT_FOUND"));
+    }
+
+    @Test
+    void 삭제할_때_로그인하지_않으면_401() throws Exception {
+        mockMvc.perform(delete("/api/cart/items/10"))
+                .andExpect(status().isUnauthorized());
+
+        verify(cartService, never()).delete(any(), any());
+    }
 
     // ===== 수량 변경 =====
 

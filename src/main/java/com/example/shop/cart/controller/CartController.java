@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -47,6 +48,13 @@ public class CartController {
                                                            @PathVariable("id") Long cartItemId,
                                                            @Valid @RequestBody CartItemUpdateRequest request) {
         return ResponseEntity.ok(cartService.updateQuantity(memberId, cartItemId, request));
+    }
+
+    /** 삭제. 성공하면 돌려줄 내용이 없으므로 본문 없이 204 No Content. */
+    @DeleteMapping("/items/{id}")
+    public ResponseEntity<Void> delete(@Login Long memberId, @PathVariable("id") Long cartItemId) {
+        cartService.delete(memberId, cartItemId);
+        return ResponseEntity.noContent().build();
     }
 
     /** 담기. 같은 상품을 또 담아 수량이 합쳐진 경우에도 201로 응답한다. (클라이언트는 응답의 quantity로 결과를 본다) */

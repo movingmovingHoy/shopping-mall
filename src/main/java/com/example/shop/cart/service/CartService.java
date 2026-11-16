@@ -61,6 +61,19 @@ public class CartService {
     }
 
     /**
+     * 삭제. 순서: 내 항목 조회 → DELETE
+     * 소유자 확인이 먼저인 이유: deleteById는 id만 보고 지우므로, 확인 없이 호출하면 남의 항목도 지워진다.
+     * 이미 지워진 항목을 또 지우면 404다. (판매중지처럼 "또 호출해도 200"으로 만들지 않았다. 지울 대상이 없는 요청이므로)
+     */
+    @Transactional
+    public void delete(Long memberId, Long cartItemId) {
+        CartItem item = cartItemMapper.findByIdAndMemberId(cartItemId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        cartItemMapper.deleteById(item.getId());
+    }
+
+    /**
      * 장바구니 담기.
      *  1) 상품이 없으면 404, 판매중지(STOPPED)면 거절 (살 수 없는 상품은 담지 못하게)
      *  2) 이미 담은 상품이면 새 줄을 만들지 않고 수량을 더한다.

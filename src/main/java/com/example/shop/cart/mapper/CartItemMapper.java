@@ -33,6 +33,9 @@ public interface CartItemMapper {
     /** 이 회원 장바구니 전체 중 판매중 상품의 (가격 x 수량) 합계. 비어 있으면 0 */
     long sumOnSalePriceByMemberId(@Param("memberId") Long memberId);
 
+    /** 장바구니 항목 한 줄을 지운다 (물리 삭제). 소유자 확인은 호출 전에 findByIdAndMemberId로 끝낸 상태여야 한다 */
+    void deleteById(Long id);
+
     /** cartItem.quantity 값으로 DB 수량을 바꾼다. 도메인 메서드(addQuantity)로 바꾼 뒤 호출한다 */
     void updateQuantity(CartItem cartItem);
 }
