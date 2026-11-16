@@ -59,6 +59,12 @@
           AND p.status = 'ON_SALE'
     </select>
 
+    <!-- 장바구니는 주문 시점 값을 order_item에 복사해 두므로, 지워도 과거 주문에 영향이 없다. 그래서 상품과 달리 물리 삭제한다 -->
+    <delete id="deleteById">
+        DELETE FROM cart_item
+        WHERE id = #{id}
+    </delete>
+
     <!-- 수량만 바꾼다. 회원/상품은 바뀌지 않는다 -->
     <update id="updateQuantity">
         UPDATE cart_item

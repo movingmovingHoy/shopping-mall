@@ -48,6 +48,38 @@ class CartServiceTest {
         productMapper.save(product);
     }
 
+    // ===== 삭제 =====
+
+    @Test
+    void 삭제하면_장바구니에서_사라진다() {
+        CartItemResponse added = cartService.add(member.getId(), new CartItemAddRequest(product.getId(), 2));
+
+        cartService.delete(member.getId(), added.getId());
+
+        assertThat(cartItemMapper.findByMemberIdAndProductId(member.getId(), product.getId())).isEmpty();
+    }
+
+    @Test
+    void 남의_항목을_삭제하면_CART_ITEM_NOT_FOUND이고_지워지지_않는다() {
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        CartItemResponse othersItem = cartService.add(other.getId(), new CartItemAddRequest(product.getId(), 2));
+
+        assertThatThrownBy(() -> cartService.delete(member.getId(), othersItem.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CART_ITEM_NOT_FOUND);
+        assertThat(cartItemMapper.findByMemberIdAndProductId(other.getId(), product.getId())).isPresent();
+    }
+
+    @Test
+    void 없는_항목을_삭제하면_CART_ITEM_NOT_FOUND() {
+        assertThatThrownBy(() -> cartService.delete(member.getId(), 999_999L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CART_ITEM_NOT_FOUND);
+    }
+
     // ===== 수량 변경 =====
 
     @Test

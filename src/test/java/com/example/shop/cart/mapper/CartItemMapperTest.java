@@ -54,6 +54,21 @@ class CartItemMapperTest {
         assertThat(cartItemMapper.findByIdAndMemberId(999_999L, member.getId())).isEmpty();      // 없는 항목
     }
 
+    @Test
+    void 삭제하면_그_항목만_사라진다() {
+        Product pants = Product.create(1L, "청바지", 30000, 5, null);
+        productMapper.save(pants);
+        CartItem tshirt = CartItem.create(member.getId(), product.getId(), 1);
+        CartItem jeans = CartItem.create(member.getId(), pants.getId(), 1);
+        cartItemMapper.save(tshirt);
+        cartItemMapper.save(jeans);
+
+        cartItemMapper.deleteById(tshirt.getId());
+
+        assertThat(cartItemMapper.findByIdAndMemberId(tshirt.getId(), member.getId())).isEmpty();
+        assertThat(cartItemMapper.findByIdAndMemberId(jeans.getId(), member.getId())).isPresent();   // 다른 항목은 그대로
+    }
+
     // ===== 장바구니 조회 =====
 
     @Test
