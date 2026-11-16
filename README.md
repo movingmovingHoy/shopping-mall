@@ -29,4 +29,6 @@ Spring Boot 기반 쇼핑몰 REST API. 백엔드 개발 전 과정을 직접 경
 
 | 번호 | 제목 |
 |---|---|
-| - | - |
+| 1 | [동시 가입 시 UK 위반이 409가 아니라 500으로 응답되는 문제](docs/troubleshooting/2026-11-10-concurrent-signup-500.md) |
+| 2 | [로그인 응답 시간으로 가입 여부가 노출되는 문제 (타이밍 공격)](docs/troubleshooting/2026-11-10-login-timing-attack.md) |
+| 3 | [@ModelAttribute DTO에 setter가 없으면 쿼리 파라미터가 조용히 무시되는 문제](docs/troubleshooting/2026-11-12-modelattribute-setter.md) |
