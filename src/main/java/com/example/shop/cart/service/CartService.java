@@ -2,7 +2,10 @@ package com.example.shop.cart.service;
 
 import com.example.shop.cart.domain.CartItem;
 import com.example.shop.cart.dto.CartItemAddRequest;
+import com.example.shop.cart.dto.CartItemDetailResponse;
 import com.example.shop.cart.dto.CartItemResponse;
+import com.example.shop.cart.dto.CartResponse;
+import com.example.shop.cart.dto.CartSearchRequest;
 import com.example.shop.cart.mapper.CartItemMapper;
 import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
@@ -13,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -22,6 +26,23 @@ public class CartService {
     private final CartItemMapper cartItemMapper;
     private final ProductMapper productMapper;
 
+    /**
+     * 장바구니 조회 (페이징). 쿼리 세 번: 이번 페이지 목록, 전체 개수, 전체 합계 금액.
+     * 합계를 이 페이지 목록으로 계산하지 않는 이유: 2페이지를 볼 때 1페이지 금액이 빠진 값이 나온다.
+     * 로그인한 회원 본인의 장바구니만 조회한다. memberId는 세션에서 왔으므로 남의 장바구니는 볼 수 없다.
+     */
+    @Transactional(readOnly = true)
+    public CartResponse getCart(Long memberId, CartSearchRequest request) {
+        List<CartItemDetailResponse> items = cartItemMapper
+                .findAllByMemberId(memberId, request.getSize(), request.getOffset())
+                .stream()
+                .map(CartItemDetailResponse::from)
+                .toList();
+        long totalCount = cartItemMapper.countByMemberId(memberId);
+        long totalPrice = cartItemMapper.sumOnSalePriceByMemberId(memberId);
+
+        return CartResponse.of(items, request.getPage(), request.getSize(), totalCount, totalPrice);
+    }
     /**
      * 장바구니 담기.
      *  1) 상품이 없으면 404, 판매중지(STOPPED)면 거절 (살 수 없는 상품은 담지 못하게)
