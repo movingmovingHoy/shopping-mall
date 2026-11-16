@@ -14,6 +14,14 @@
           AND product_id = #{productId}
     </select>
 
+    <!-- member_id 조건이 소유자 확인이다. 남의 항목 id를 보내면 조회되지 않아 수정/삭제로 이어지지 않는다 -->
+    <select id="findByIdAndMemberId" resultType="com.example.shop.cart.domain.CartItem">
+        SELECT id, member_id, product_id, quantity
+        FROM cart_item
+        WHERE id = #{id}
+          AND member_id = #{memberId}
+    </select>
+
     <!--
         장바구니 조회. 상품 이름/가격이 필요해서 product와 INNER JOIN 한다. (cart_item.product_id는 FK라 상품이 항상 있다)
         컬럼 별칭(AS)이 DTO 필드 이름으로 매핑된다: product_name → productName, status → productStatus

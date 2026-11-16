@@ -42,6 +42,18 @@ class CartItemMapperTest {
         productMapper.save(product);
     }
 
+    @Test
+    void id와_회원이_모두_맞아야_조회된다() {
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        CartItem item = CartItem.create(member.getId(), product.getId(), 2);
+        cartItemMapper.save(item);
+
+        assertThat(cartItemMapper.findByIdAndMemberId(item.getId(), member.getId())).isPresent();
+        assertThat(cartItemMapper.findByIdAndMemberId(item.getId(), other.getId())).isEmpty();   // 남의 항목
+        assertThat(cartItemMapper.findByIdAndMemberId(999_999L, member.getId())).isEmpty();      // 없는 항목
+    }
+
     // ===== 장바구니 조회 =====
 
     @Test

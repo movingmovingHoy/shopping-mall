@@ -4,6 +4,7 @@ import com.example.shop.cart.domain.CartItem;
 import com.example.shop.cart.dto.CartItemAddRequest;
 import com.example.shop.cart.dto.CartItemDetailResponse;
 import com.example.shop.cart.dto.CartItemResponse;
+import com.example.shop.cart.dto.CartItemUpdateRequest;
 import com.example.shop.cart.dto.CartResponse;
 import com.example.shop.cart.dto.CartSearchRequest;
 import com.example.shop.cart.mapper.CartItemMapper;
@@ -43,6 +44,22 @@ public class CartService {
 
         return CartResponse.of(items, request.getPage(), request.getSize(), totalCount, totalPrice);
     }
+    /**
+     * 수량 변경. 순서: 내 항목 조회 → 도메인 메서드로 변경 → UPDATE
+     * 남의 항목이거나 없는 항목이면 둘 다 CART_ITEM_NOT_FOUND(404). 소유자 확인은 조회 SQL(member_id 조건)이 한다.
+     * 판매중지 상품도 수량은 바꿀 수 있다. 주문할 때 판매중인지 확인한다.
+     */
+    @Transactional
+    public CartItemResponse updateQuantity(Long memberId, Long cartItemId, CartItemUpdateRequest request) {
+        CartItem item = cartItemMapper.findByIdAndMemberId(cartItemId, memberId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        item.changeQuantity(request.getQuantity());
+        cartItemMapper.updateQuantity(item);
+
+        return CartItemResponse.from(item);
+    }
+
     /**
      * 장바구니 담기.
      *  1) 상품이 없으면 404, 판매중지(STOPPED)면 거절 (살 수 없는 상품은 담지 못하게)

@@ -36,6 +36,8 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "상품을 찾을 수 없습니다."),
 
     // 장바구니
+    // 없는 항목이거나 내 장바구니의 항목이 아닐 때. 둘을 구분하지 않는다 (403으로 알려 주면 그 id가 존재한다는 정보가 샌다)
+    CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
     // 판매중지(STOPPED) 상품을 담으려 할 때. 상품은 있지만 현재 상태가 허용하지 않으므로 409
     PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다.");
 

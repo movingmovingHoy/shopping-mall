@@ -3,6 +3,7 @@ package com.example.shop.cart.service;
 import com.example.shop.cart.domain.CartItem;
 import com.example.shop.cart.dto.CartItemAddRequest;
 import com.example.shop.cart.dto.CartItemResponse;
+import com.example.shop.cart.dto.CartItemUpdateRequest;
 import com.example.shop.cart.dto.CartResponse;
 import com.example.shop.cart.dto.CartSearchRequest;
 import com.example.shop.cart.mapper.CartItemMapper;
@@ -45,6 +46,41 @@ class CartServiceTest {
         memberMapper.save(member);
         product = Product.create(1L, "반팔 티셔츠", 15000, 10, null);
         productMapper.save(product);
+    }
+
+    // ===== 수량 변경 =====
+
+    @Test
+    void 수량을_변경하면_더하지_않고_그_값으로_바뀐다() {
+        CartItemResponse added = cartService.add(member.getId(), new CartItemAddRequest(product.getId(), 5));
+
+        CartItemResponse response = cartService.updateQuantity(member.getId(), added.getId(), new CartItemUpdateRequest(2));
+
+        assertThat(response.getQuantity()).isEqualTo(2);   // 5+2가 아니라 2
+        assertThat(cartItemMapper.findByMemberIdAndProductId(member.getId(), product.getId())
+                .orElseThrow().getQuantity()).isEqualTo(2);
+    }
+
+    @Test
+    void 남의_항목이면_CART_ITEM_NOT_FOUND이고_수량은_그대로다() {
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        CartItemResponse othersItem = cartService.add(other.getId(), new CartItemAddRequest(product.getId(), 5));
+
+        assertThatThrownBy(() -> cartService.updateQuantity(member.getId(), othersItem.getId(), new CartItemUpdateRequest(1)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CART_ITEM_NOT_FOUND);
+        assertThat(cartItemMapper.findByMemberIdAndProductId(other.getId(), product.getId())
+                .orElseThrow().getQuantity()).isEqualTo(5);
+    }
+
+    @Test
+    void 없는_항목이면_CART_ITEM_NOT_FOUND() {
+        assertThatThrownBy(() -> cartService.updateQuantity(member.getId(), 999_999L, new CartItemUpdateRequest(1)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.CART_ITEM_NOT_FOUND);
     }
 
     // ===== 장바구니 조회 =====

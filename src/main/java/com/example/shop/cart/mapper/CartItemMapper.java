@@ -19,6 +19,9 @@ public interface CartItemMapper {
     Optional<CartItem> findByMemberIdAndProductId(@Param("memberId") Long memberId,
                                                   @Param("productId") Long productId);
 
+    /** id로 찾되 이 회원의 항목일 때만 나온다. 남의 항목이면 없는 것과 같다 (소유자 확인을 SQL 조건으로 한다) */
+    Optional<CartItem> findByIdAndMemberId(@Param("id") Long id, @Param("memberId") Long memberId);
+
     /** 이 회원의 장바구니를 상품 정보와 함께, 최근에 담은 순으로 한 페이지 조회한다 */
     List<CartItemDetail> findAllByMemberId(@Param("memberId") Long memberId,
                                            @Param("size") int size,
