@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.order.mapper.OrderItemMapper">
+
+    <!-- order_price에는 주문 시점의 상품 가격을 복사해 넣는다. 나중에 상품 가격이 바뀌어도 이 값은 그대로다 -->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_item (order_id, product_id, order_price, quantity)
+        VALUES (#{orderId}, #{productId}, #{orderPrice}, #{quantity})
+    </insert>
+
+    <select id="findAllByOrderId" resultType="com.example.shop.order.domain.OrderItem">
+        SELECT id, order_id, product_id, order_price, quantity
+        FROM order_item
+        WHERE order_id = #{orderId}
+        ORDER BY id ASC
+    </select>
+
+</mapper>

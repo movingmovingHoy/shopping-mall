@@ -161,4 +161,31 @@ class ProductMapperTest {
         assertThatThrownBy(() -> productMapper.save(product))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    void 재고를_바꾸면_DB에_반영되고_다른_값은_그대로다() {
+        Product product = Product.create(CATEGORY_ID, "반팔 티셔츠", 15000, 10, null);
+        productMapper.save(product);
+
+        product.decreaseStock(4);
+        productMapper.updateStock(product);
+
+        Product found = productMapper.findById(product.getId()).orElseThrow();
+        assertThat(found.getStockQuantity()).isEqualTo(6);
+        assertThat(found.getPrice()).isEqualTo(15000);
+        assertThat(found.getStatus()).isEqualTo(ProductStatus.ON_SALE);
+    }
+
+    /** 도메인 검사(decreaseStock)를 건너뛰고 음수 재고를 저장하려 하면 DB의 CHECK 제약이 마지막으로 막는다 */
+    @Test
+    void 음수_재고는_CHECK_제약으로_저장할_수_없다() {
+        Product product = Product.create(CATEGORY_ID, "반팔 티셔츠", 15000, 10, null);
+        productMapper.save(product);
+        product.update(CATEGORY_ID, "반팔 티셔츠", 15000, -1, null);
+
+        // MySQL의 CHECK 위반(에러 3819)은 Spring이 DataIntegrityViolationException으로 분류하지 않는다.
+        // 예외 타입 대신 어떤 제약이 막았는지(ck_product_stock)로 확인한다.
+        assertThatThrownBy(() -> productMapper.updateStock(product))
+                .hasMessageContaining("ck_product_stock");
+    }
 }

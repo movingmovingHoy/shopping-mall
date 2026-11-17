@@ -41,6 +41,13 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 재고만 바꾼다. 가격/상태 등은 건드리지 않는다 (update와 달리 주문 흐름에서 쓰는 전용 쿼리) -->
+    <update id="updateStock">
+        UPDATE product
+        SET stock_quantity = #{stockQuantity}
+        WHERE id = #{id}
+    </update>
+
     <!--
         목록 조회와 개수 조회가 같은 WHERE 조건을 써야 한다.
         두 곳에 따로 쓰면 한쪽만 고쳤을 때 "목록은 3개인데 totalCount는 5" 같은 불일치가 생기므로

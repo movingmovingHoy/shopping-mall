@@ -1,5 +1,7 @@
 package com.example.shop.product.domain;
 
+import com.example.shop.global.exception.BusinessException;
+import com.example.shop.global.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +48,18 @@ public class Product {
      */
     public void stop() {
         this.status = ProductStatus.STOPPED;
+    }
+
+    /**
+     * 재고 차감 (주문 시). 재고보다 많이 빼려 하면 OUT_OF_STOCK 예외를 던지고 재고는 그대로 둔다.
+     * 규칙을 서비스가 아니라 여기에 둔 이유: "재고는 음수가 될 수 없다"는 상품 자신의 규칙이라서,
+     * 어디서 호출하든 이 검사를 건너뛸 수 없게 하려는 것이다. (DB의 CHECK 제약은 마지막 안전망)
+     */
+    public void decreaseStock(int quantity) {
+        if (this.stockQuantity < quantity) {
+            throw new BusinessException(ErrorCode.OUT_OF_STOCK);
+        }
+        this.stockQuantity -= quantity;
     }
 
     /**

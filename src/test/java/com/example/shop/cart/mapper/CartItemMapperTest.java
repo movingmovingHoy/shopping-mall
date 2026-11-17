@@ -174,4 +174,34 @@ class CartItemMapperTest {
         assertThatThrownBy(() -> cartItemMapper.save(CartItem.create(member.getId(), product.getId(), 1)))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
+    @Test
+    void 주문용_조회는_내_장바구니_전체를_담은_순서로_가져온다() {
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        Product pants = Product.create(1L, "청바지", 30000, 5, null);
+        productMapper.save(pants);
+        cartItemMapper.save(CartItem.create(member.getId(), product.getId(), 2));
+        cartItemMapper.save(CartItem.create(member.getId(), pants.getId(), 1));
+        cartItemMapper.save(CartItem.create(other.getId(), product.getId(), 9));   // 남의 장바구니
+
+        List<CartItem> items = cartItemMapper.findAllForOrder(member.getId());
+
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).getProductId()).isEqualTo(product.getId());
+        assertThat(items.get(1).getProductId()).isEqualTo(pants.getId());
+    }
+
+    @Test
+    void 장바구니를_비우면_내_항목만_사라진다() {
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        cartItemMapper.save(CartItem.create(member.getId(), product.getId(), 2));
+        cartItemMapper.save(CartItem.create(other.getId(), product.getId(), 3));
+
+        cartItemMapper.deleteAllByMemberId(member.getId());
+
+        assertThat(cartItemMapper.findAllForOrder(member.getId())).isEmpty();
+        assertThat(cartItemMapper.findAllForOrder(other.getId())).hasSize(1);   // 남의 장바구니는 그대로
+    }
 }
