@@ -8,6 +8,7 @@ import com.example.shop.member.domain.Member;
 import com.example.shop.member.mapper.MemberMapper;
 import com.example.shop.order.domain.OrderItem;
 import com.example.shop.order.domain.OrderStatus;
+import com.example.shop.order.dto.CartOrderCreateRequest;
 import com.example.shop.order.dto.OrderCreateRequest;
 import com.example.shop.order.dto.OrderItemRequest;
 import com.example.shop.order.dto.OrderResponse;
@@ -148,7 +149,7 @@ class OrderServiceTest {
         cartItemMapper.save(CartItem.create(member.getId(), tshirt.getId(), 2));
         cartItemMapper.save(CartItem.create(member.getId(), jeans.getId(), 1));
 
-        OrderResponse response = orderService.create(member.getId(), new OrderCreateRequest("홍길동", "서울시", null));
+        OrderResponse response = orderService.createFromCart(member.getId(), cartRequest());
 
         assertThat(response.getTotalPrice()).isEqualTo(15000 * 2 + 30000);
         assertThat(orderItemMapper.findAllByOrderId(response.getId())).hasSize(2);
@@ -164,35 +165,25 @@ class OrderServiceTest {
         cartItemMapper.save(CartItem.create(member.getId(), tshirt.getId(), 1));
         cartItemMapper.save(CartItem.create(other.getId(), jeans.getId(), 1));
 
-        orderService.create(member.getId(), new OrderCreateRequest("홍길동", "서울시", null));
+        orderService.createFromCart(member.getId(), cartRequest());
 
         assertThat(cartItemMapper.findAllForOrder(other.getId())).hasSize(1);
         assertThat(stockOf(jeans)).isEqualTo(5);   // 남의 장바구니 상품은 주문되지 않았다
     }
 
     @Test
-    void items가_빈_리스트여도_장바구니_주문으로_본다() {
-        cartItemMapper.save(CartItem.create(member.getId(), tshirt.getId(), 1));
-
-        OrderResponse response = orderService.create(member.getId(), new OrderCreateRequest("홍길동", "서울시", List.of()));
-
-        assertThat(response.getItems()).hasSize(1);
-        assertThat(cartItemMapper.findAllForOrder(member.getId())).isEmpty();
-    }
-
-    @Test
-    void 장바구니가_비어_있으면_EMPTY_ORDER() {
-        assertThatThrownBy(() -> orderService.create(member.getId(), new OrderCreateRequest("홍길동", "서울시", null)))
+    void 장바구니가_비어_있으면_EMPTY_CART() {
+        assertThatThrownBy(() -> orderService.createFromCart(member.getId(), cartRequest()))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(ErrorCode.EMPTY_ORDER);
+                .isEqualTo(ErrorCode.EMPTY_CART);
     }
 
     @Test
     void 장바구니에_재고_부족_상품이_있으면_주문_실패하고_장바구니는_그대로다() {
         cartItemMapper.save(CartItem.create(member.getId(), jeans.getId(), 6));   // 재고 5
 
-        assertThatThrownBy(() -> orderService.create(member.getId(), new OrderCreateRequest("홍길동", "서울시", null)))
+        assertThatThrownBy(() -> orderService.createFromCart(member.getId(), cartRequest()))
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.OUT_OF_STOCK);
@@ -235,6 +226,10 @@ class OrderServiceTest {
 
     private OrderCreateRequest request(OrderItemRequest... items) {
         return new OrderCreateRequest("홍길동", "서울시 어딘가 1", List.of(items));
+    }
+
+    private CartOrderCreateRequest cartRequest() {
+        return new CartOrderCreateRequest("홍길동", "서울시");
     }
 
     private int stockOf(Product product) {

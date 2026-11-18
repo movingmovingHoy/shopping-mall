@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** 주문 생성 API의 HTTP 응답 확인. 서비스는 가짜(@MockitoBean)이고, 로그인 인터셉터는 실제로 동작한다. */
+/** 주문 생성 API(바로 구매, 장바구니 주문)의 HTTP 응답 확인. 서비스는 가짜(@MockitoBean)이고, 로그인 인터셉터는 실제로 동작한다. */
 @WebMvcTest(OrderController.class)
 class OrderControllerTest {
 
@@ -59,16 +59,75 @@ class OrderControllerTest {
     }
 
     @Test
-    void items_없이도_주문할_수_있다_장바구니_주문() throws Exception {
-        given(orderService.create(eq(1L), any()))
-                .willReturn(OrderResponse.of(Order.create(1L, 0, "홍길동", "서울시"), List.of()));
-
+    void 바로_구매에_items가_없으면_400() throws Exception {
         mockMvc.perform(post("/api/orders").session(loginSession())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"receiverName": "홍길동", "receiverAddress": "서울시"}
                                 """))
-                .andExpect(status().isCreated());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+
+        verify(orderService, never()).create(any(), any());
+    }
+
+    @Test
+    void 바로_구매에_items가_빈_배열이면_400_장바구니_주문으로_바뀌지_않는다() throws Exception {
+        mockMvc.perform(post("/api/orders").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"receiverName": "홍길동", "receiverAddress": "서울시", "items": []}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+
+        verify(orderService, never()).create(any(), any());
+        verify(orderService, never()).createFromCart(any(), any());
+    }
+
+    // ===== 장바구니 주문 (POST /api/orders/cart) =====
+
+    @Test
+    void 장바구니_주문하면_201() throws Exception {
+        Order order = Order.create(1L, 15000, "홍길동", "서울시");
+        OrderItem item = OrderItem.create(null, 5L, 15000, 1);
+        given(orderService.createFromCart(eq(1L), any()))
+                .willReturn(OrderResponse.of(order, List.of(OrderItemResponse.of(item, "반팔 티셔츠"))));
+
+        mockMvc.perform(post("/api/orders/cart").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"receiverName": "홍길동", "receiverAddress": "서울시"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.totalPrice").value(15000))
+                .andExpect(jsonPath("$.items[0].productName").value("반팔 티셔츠"));
+    }
+
+    @Test
+    void 장바구니_주문도_로그인하지_않으면_401() throws Exception {
+        mockMvc.perform(post("/api/orders/cart")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"receiverName": "홍길동", "receiverAddress": "서울시"}
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("LOGIN_REQUIRED"));
+
+        verify(orderService, never()).createFromCart(any(), any());
+    }
+
+    @Test
+    void 장바구니_주문에_받는_사람이_비어_있으면_400() throws Exception {
+        mockMvc.perform(post("/api/orders/cart").session(loginSession())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"receiverName": " ", "receiverAddress": "서울시"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+
+        verify(orderService, never()).createFromCart(any(), any());
     }
 
     @Test
@@ -89,7 +148,8 @@ class OrderControllerTest {
         mockMvc.perform(post("/api/orders").session(loginSession())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"receiverName": " ", "receiverAddress": "서울시"}
+                                {"receiverName": " ", "receiverAddress": "서울시",
+                                 "items": [{"productId": 5, "quantity": 1}]}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
@@ -102,7 +162,7 @@ class OrderControllerTest {
         mockMvc.perform(post("/api/orders").session(loginSession())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"receiverName": "홍길동"}
+                                {"receiverName": "홍길동", "items": [{"productId": 5, "quantity": 1}]}
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
@@ -138,15 +198,15 @@ class OrderControllerTest {
 
     @Test
     void 장바구니가_비어_있으면_400() throws Exception {
-        given(orderService.create(any(), any())).willThrow(new BusinessException(ErrorCode.EMPTY_ORDER));
+        given(orderService.createFromCart(any(), any())).willThrow(new BusinessException(ErrorCode.EMPTY_CART));
 
-        mockMvc.perform(post("/api/orders").session(loginSession())
+        mockMvc.perform(post("/api/orders/cart").session(loginSession())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"receiverName": "홍길동", "receiverAddress": "서울시"}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("EMPTY_ORDER"));
+                .andExpect(jsonPath("$.code").value("EMPTY_CART"));
     }
 
     private MockHttpSession loginSession() {

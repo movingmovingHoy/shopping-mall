@@ -44,8 +44,9 @@ public enum ErrorCode {
     // 주문
     // 재고보다 많이 주문했을 때. 요청 형식은 맞지만 현재 재고 상태가 허용하지 않으므로 409 (PRODUCT_NOT_ON_SALE과 같은 이유)
     OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
-    // 장바구니 주문인데 장바구니가 비어 있을 때. 주문할 상품이 없는 잘못된 요청이므로 400
-    EMPTY_ORDER(HttpStatus.BAD_REQUEST, "주문할 상품이 없습니다.");
+    // 장바구니 주문(POST /api/orders/cart)인데 장바구니가 비어 있을 때. 주문할 상품이 없는 잘못된 요청이므로 400
+    // (바로 구매에서 items가 비어 있는 경우는 @NotEmpty 검증의 INVALID_INPUT으로 처리된다)
+    EMPTY_CART(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다.");
 
     private final HttpStatus status;
     private final String message;

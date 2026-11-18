@@ -6,6 +6,7 @@ import com.example.shop.global.exception.BusinessException;
 import com.example.shop.global.exception.ErrorCode;
 import com.example.shop.order.domain.Order;
 import com.example.shop.order.domain.OrderItem;
+import com.example.shop.order.dto.CartOrderCreateRequest;
 import com.example.shop.order.dto.OrderCreateRequest;
 import com.example.shop.order.dto.OrderItemRequest;
 import com.example.shop.order.dto.OrderItemResponse;
@@ -34,24 +35,41 @@ public class OrderService {
     private final CartItemMapper cartItemMapper;
 
     /**
-     * 주문 생성. 아래 전체가 하나의 트랜잭션이다. 중간에 예외가 나면(재고 부족 등) 이미 깎은 재고도 모두 롤백된다.
-     *  1) 주문할 (상품, 수량) 목록을 정한다. items가 있으면 그것, 없으면 내 장바구니 전체
-     *  2) 상품마다: 존재 확인(404) → 판매중 확인(409) → 재고 차감(부족하면 409) → 재고 UPDATE
-     *  3) 총액 계산 → orders 저장 → order_item 저장 (이때 현재 가격을 order_price에 복사)
-     *  4) 장바구니 주문이었다면 장바구니를 비운다
-     *
-     * 하나라도 실패하면 주문 전체가 실패한다. (일부 상품만 주문되지 않는다)
-     * 재고 동시성 제어(동시에 같은 상품을 주문하는 경우)는 MVP 범위가 아니라서 하지 않았다. 확장 단계에서 다룬다.
+     * 바로 구매. 요청에 적힌 (상품, 수량)만 주문한다. 장바구니는 건드리지 않는다.
+     * items가 비어 있는 요청은 컨트롤러의 @NotEmpty 검증에서 이미 400으로 막혔다.
      */
     @Transactional
     public OrderResponse create(Long memberId, OrderCreateRequest request) {
-        boolean cartOrder = request.isCartOrder();
-        Map<Long, Integer> quantities = cartOrder ? collectFromCart(memberId) : collectFromRequest(request);
+        Map<Long, Integer> quantities = collectFromRequest(request);
+        return placeOrder(memberId, quantities, request.getReceiverName(), request.getReceiverAddress());
+    }
+
+    /**
+     * 장바구니 주문. 내 장바구니 전체를 주문하고, 성공하면 장바구니를 비운다.
+     * 장바구니 비우기도 같은 트랜잭션이라, 주문이 실패하면(재고 부족 등) 장바구니도 그대로 남는다.
+     */
+    @Transactional
+    public OrderResponse createFromCart(Long memberId, CartOrderCreateRequest request) {
+        Map<Long, Integer> quantities = collectFromCart(memberId);
         if (quantities.isEmpty()) {
-            throw new BusinessException(ErrorCode.EMPTY_ORDER);
+            throw new BusinessException(ErrorCode.EMPTY_CART);
         }
 
-        // 2) 상품 검증 + 재고 차감. order_item은 order id가 필요하므로 아직 저장하지 않고 모아 둔다.
+        OrderResponse response = placeOrder(memberId, quantities, request.getReceiverName(), request.getReceiverAddress());
+        cartItemMapper.deleteAllByMemberId(memberId);
+        return response;
+    }
+
+    /**
+     * 두 주문 방식의 공통 부분. 호출한 public 메서드의 트랜잭션 안에서 실행된다.
+     * 중간에 예외가 나면(재고 부족 등) 이미 깎은 재고도 모두 롤백된다. (일부 상품만 주문되지 않는다)
+     *  1) 상품마다: 존재 확인(404) → 판매중 확인(409) → 재고 차감(부족하면 409) → 재고 UPDATE
+     *  2) 총액 계산 → orders 저장 → order_item 저장 (이때 현재 가격을 order_price에 복사)
+     * 재고 동시성 제어(동시에 같은 상품을 주문하는 경우)는 MVP 범위가 아니라서 하지 않았다. 확장 단계에서 다룬다.
+     */
+    private OrderResponse placeOrder(Long memberId, Map<Long, Integer> quantities,
+                                     String receiverName, String receiverAddress) {
+        // 1) 상품 검증 + 재고 차감. order_item은 order id가 필요하므로 아직 저장하지 않고 모아 둔다.
         List<Product> products = new ArrayList<>();
         long totalPrice = 0;
         for (Map.Entry<Long, Integer> entry : quantities.entrySet()) {
@@ -68,9 +86,8 @@ public class OrderService {
             totalPrice += (long) product.getPrice() * entry.getValue();
         }
 
-        // 3) 주문 저장 → 생성된 id로 주문상품 저장
-        Order order = Order.create(memberId, Math.toIntExact(totalPrice),
-                request.getReceiverName(), request.getReceiverAddress());
+        // 2) 주문 저장 → 생성된 id로 주문상품 저장
+        Order order = Order.create(memberId, Math.toIntExact(totalPrice), receiverName, receiverAddress);
         orderMapper.save(order);
 
         List<OrderItemResponse> itemResponses = new ArrayList<>();
@@ -80,11 +97,6 @@ public class OrderService {
                     product.getPrice(), quantities.get(product.getId()));
             orderItemMapper.save(item);
             itemResponses.add(OrderItemResponse.of(item, product.getName()));
-        }
-
-        // 4) 장바구니 주문일 때만 비운다. 단건 주문은 장바구니를 건드리지 않는다.
-        if (cartOrder) {
-            cartItemMapper.deleteAllByMemberId(memberId);
         }
 
         return OrderResponse.of(order, itemResponses);
