@@ -39,7 +39,14 @@ public enum ErrorCode {
     // 없는 항목이거나 내 장바구니의 항목이 아닐 때. 둘을 구분하지 않는다 (403으로 알려 주면 그 id가 존재한다는 정보가 샌다)
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "장바구니 항목을 찾을 수 없습니다."),
     // 판매중지(STOPPED) 상품을 담으려 할 때. 상품은 있지만 현재 상태가 허용하지 않으므로 409
-    PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다.");
+    PRODUCT_NOT_ON_SALE(HttpStatus.CONFLICT, "판매 중인 상품이 아닙니다."),
+
+    // 주문
+    // 재고보다 많이 주문했을 때. 요청 형식은 맞지만 현재 재고 상태가 허용하지 않으므로 409 (PRODUCT_NOT_ON_SALE과 같은 이유)
+    OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
+    // 장바구니 주문(POST /api/orders/cart)인데 장바구니가 비어 있을 때. 주문할 상품이 없는 잘못된 요청이므로 400
+    // (바로 구매에서 items가 비어 있는 경우는 @NotEmpty 검증의 INVALID_INPUT으로 처리된다)
+    EMPTY_CART(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -38,4 +38,13 @@ public interface CartItemMapper {
 
     /** cartItem.quantity 값으로 DB 수량을 바꾼다. 도메인 메서드(addQuantity)로 바꾼 뒤 호출한다 */
     void updateQuantity(CartItem cartItem);
+
+    /**
+     * 장바구니 주문용: 이 회원의 장바구니 전체를 페이징 없이 가져온다.
+     * 목록 API는 항상 페이징하지만, 주문은 "일부만" 주문할 수 없고 전부 한 번에 처리해야 하므로 예외다.
+     */
+    List<CartItem> findAllForOrder(Long memberId);
+
+    /** 주문을 마친 뒤 이 회원의 장바구니를 모두 비운다 */
+    void deleteAllByMemberId(Long memberId);
 }

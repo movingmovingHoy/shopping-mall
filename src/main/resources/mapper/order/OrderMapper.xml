@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shop.order.mapper.OrderMapper">
+
+    <!-- 테이블 이름은 예약어 order를 피해 orders. status는 enum 이름("CREATED")으로 저장, ordered_at은 DB 기본값 사용 -->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (member_id, status, total_price, receiver_name, receiver_address)
+        VALUES (#{memberId}, #{status}, #{totalPrice}, #{receiverName}, #{receiverAddress})
+    </insert>
+
+    <select id="findById" resultType="com.example.shop.order.domain.Order">
+        SELECT id, member_id, status, total_price, receiver_name, receiver_address, ordered_at
+        FROM orders
+        WHERE id = #{id}
+    </select>
+
+</mapper>

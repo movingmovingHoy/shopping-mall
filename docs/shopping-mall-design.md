@@ -110,7 +110,8 @@ erDiagram
 | POST | /api/cart/items | 장바구니 담기 |
 | PATCH | /api/cart/items/{id} | 수량 변경 |
 | DELETE | /api/cart/items/{id} | 삭제 |
-| POST | /api/orders | 주문 생성 |
+| POST | /api/orders | 바로 구매 (요청의 items만 주문, 장바구니는 그대로) |
+| POST | /api/orders/cart | 장바구니 주문 (장바구니 전체 주문 후 비우기) |
 | GET | /api/orders, /api/orders/{id} | 주문 목록/상세 |
 | POST | /api/orders/{id}/cancel | 주문 취소 |
 | POST | /api/orders/{id}/pay | 모의 결제 |
