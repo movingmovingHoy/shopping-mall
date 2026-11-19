@@ -14,4 +14,73 @@
         WHERE id = #{id}
     </select>
 
+    <!--
+        내 주문 목록. order_item과 JOIN 하지 않고 개수만 서브쿼리로 센다.
+        JOIN 하면 주문 1건이 상품 수만큼 여러 행이 되어 LIMIT/OFFSET이 "주문 몇 건"이 아니라 "행 몇 개"로 잘린다.
+        정렬: 최근 주문 순. ordered_at은 초 단위라 같은 초에 주문이 여러 건이면 순서가 흔들리므로 id DESC를 덧붙인다.
+        (WHERE member_id + ORDER BY ordered_at 은 인덱스 idx_orders_member_ordered를 탈 수 있다)
+    -->
+    <select id="findAllByMemberId" resultType="com.example.shop.order.dto.OrderSummary">
+        SELECT o.id,
+               o.status,
+               o.total_price,
+               (SELECT COUNT(*) FROM order_item oi WHERE oi.order_id = o.id) AS item_count,
+               o.ordered_at
+        FROM orders o
+        WHERE o.member_id = #{memberId}
+        ORDER BY o.ordered_at DESC, o.id DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countByMemberId" resultType="long">
+        SELECT COUNT(*)
+        FROM orders
+        WHERE member_id = #{memberId}
+    </select>
+
+    <!--
+        주문 상세: orders 1행 + order_item N행 + 상품 이름(product).
+        JOIN 결과는 주문 컬럼이 상품 수만큼 반복되는 N행이다. resultMap이 이걸 OrderDetail 1개로 합친다.
+          - <id column="id">: 이 값이 같은 행들은 같은 주문이다 → 하나로 합친다
+          - <collection>: 상품 컬럼들은 행마다 OrderItemDetail 하나씩 만들어 items에 넣는다
+        두 테이블 모두 id 컬럼이 있어서 주문상품 id는 item_id로 별칭을 준다. (같은 이름이면 어느 id인지 구분할 수 없다)
+        중첩 resultMap 안은 자동 매핑이 되지 않으므로(autoMappingBehavior 기본값 PARTIAL) 컬럼을 모두 적는다.
+        주문에는 상품이 항상 1개 이상이고(주문 생성에서 보장), 상품은 물리 삭제하지 않으므로 INNER JOIN으로 충분하다.
+    -->
+    <resultMap id="orderDetailMap" type="com.example.shop.order.dto.OrderDetail">
+        <id property="id" column="id"/>
+        <result property="status" column="status"/>
+        <result property="totalPrice" column="total_price"/>
+        <result property="receiverName" column="receiver_name"/>
+        <result property="receiverAddress" column="receiver_address"/>
+        <result property="orderedAt" column="ordered_at"/>
+        <collection property="items" ofType="com.example.shop.order.dto.OrderItemDetail">
+            <id property="id" column="item_id"/>
+            <result property="productId" column="product_id"/>
+            <result property="productName" column="product_name"/>
+            <result property="orderPrice" column="order_price"/>
+            <result property="quantity" column="quantity"/>
+        </collection>
+    </resultMap>
+
+    <select id="findDetailByIdAndMemberId" resultMap="orderDetailMap">
+        SELECT o.id,
+               o.status,
+               o.total_price,
+               o.receiver_name,
+               o.receiver_address,
+               o.ordered_at,
+               oi.id          AS item_id,
+               oi.product_id,
+               p.name         AS product_name,
+               oi.order_price,
+               oi.quantity
+        FROM orders o
+                 JOIN order_item oi ON oi.order_id = o.id
+                 JOIN product p ON p.id = oi.product_id
+        WHERE o.id = #{id}
+          AND o.member_id = #{memberId}
+        ORDER BY oi.id ASC
+    </select>
+
 </mapper>

@@ -46,7 +46,9 @@ public enum ErrorCode {
     OUT_OF_STOCK(HttpStatus.CONFLICT, "재고가 부족합니다."),
     // 장바구니 주문(POST /api/orders/cart)인데 장바구니가 비어 있을 때. 주문할 상품이 없는 잘못된 요청이므로 400
     // (바로 구매에서 items가 비어 있는 경우는 @NotEmpty 검증의 INVALID_INPUT으로 처리된다)
-    EMPTY_CART(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다.");
+    EMPTY_CART(HttpStatus.BAD_REQUEST, "장바구니가 비어 있습니다."),
+    // 없는 주문이거나 남의 주문일 때. CART_ITEM_NOT_FOUND와 같은 이유로 둘을 구분하지 않는다 (403이면 그 주문 id가 존재한다는 정보가 샌다)
+    ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;

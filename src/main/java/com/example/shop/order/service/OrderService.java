@@ -8,6 +8,10 @@ import com.example.shop.order.domain.Order;
 import com.example.shop.order.domain.OrderItem;
 import com.example.shop.order.dto.CartOrderCreateRequest;
 import com.example.shop.order.dto.OrderCreateRequest;
+import com.example.shop.order.dto.OrderDetailResponse;
+import com.example.shop.order.dto.OrderPageResponse;
+import com.example.shop.order.dto.OrderSearchRequest;
+import com.example.shop.order.dto.OrderSummaryResponse;
 import com.example.shop.order.dto.OrderItemRequest;
 import com.example.shop.order.dto.OrderItemResponse;
 import com.example.shop.order.dto.OrderResponse;
@@ -58,6 +62,30 @@ public class OrderService {
         OrderResponse response = placeOrder(memberId, quantities, request.getReceiverName(), request.getReceiverAddress());
         cartItemMapper.deleteAllByMemberId(memberId);
         return response;
+    }
+
+    /** 내 주문 목록 (최근 주문 순, 페이징). 조회만 하므로 readOnly */
+    @Transactional(readOnly = true)
+    public OrderPageResponse getOrders(Long memberId, OrderSearchRequest request) {
+        List<OrderSummaryResponse> orders = orderMapper
+                .findAllByMemberId(memberId, request.getSize(), request.getOffset())
+                .stream()
+                .map(OrderSummaryResponse::from)
+                .toList();
+        long totalCount = orderMapper.countByMemberId(memberId);
+
+        return OrderPageResponse.of(orders, request.getPage(), request.getSize(), totalCount);
+    }
+
+    /**
+     * 내 주문 상세. 없는 주문과 남의 주문을 똑같이 404로 응답한다.
+     * 소유자 확인을 SQL의 WHERE member_id 로 해서, 남의 주문은 애초에 조회되지 않는다.
+     */
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrder(Long memberId, Long orderId) {
+        return orderMapper.findDetailByIdAndMemberId(orderId, memberId)
+                .map(OrderDetailResponse::from)
+                .orElseThrow(() -> new BusinessException(ErrorCode.ORDER_NOT_FOUND));
     }
 
     /**

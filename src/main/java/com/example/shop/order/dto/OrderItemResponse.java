@@ -23,4 +23,9 @@ public final class OrderItemResponse {
     public static OrderItemResponse of(OrderItem item, String productName) {
         return new OrderItemResponse(item.getProductId(), productName, item.getOrderPrice(), item.getQuantity());
     }
+
+    /** 주문 상세 조회용. 조인 결과에 상품 이름이 이미 들어 있다 */
+    public static OrderItemResponse from(OrderItemDetail item) {
+        return new OrderItemResponse(item.getProductId(), item.getProductName(), item.getOrderPrice(), item.getQuantity());
+    }
 }

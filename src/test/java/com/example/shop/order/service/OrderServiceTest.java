@@ -10,6 +10,9 @@ import com.example.shop.order.domain.OrderItem;
 import com.example.shop.order.domain.OrderStatus;
 import com.example.shop.order.dto.CartOrderCreateRequest;
 import com.example.shop.order.dto.OrderCreateRequest;
+import com.example.shop.order.dto.OrderDetailResponse;
+import com.example.shop.order.dto.OrderPageResponse;
+import com.example.shop.order.dto.OrderSearchRequest;
 import com.example.shop.order.dto.OrderItemRequest;
 import com.example.shop.order.dto.OrderResponse;
 import com.example.shop.order.mapper.OrderItemMapper;
@@ -222,6 +225,76 @@ class OrderServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .extracting(e -> ((BusinessException) e).getErrorCode())
                 .isEqualTo(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    // ===== 주문 목록/상세 =====
+
+    @Test
+    void 주문_목록은_내_주문만_최근_순으로_페이징해서_준다() {
+        OrderResponse first = orderService.create(member.getId(), request(new OrderItemRequest(tshirt.getId(), 1)));
+        OrderResponse second = orderService.create(member.getId(), request(
+                new OrderItemRequest(tshirt.getId(), 1), new OrderItemRequest(jeans.getId(), 1)));
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+        orderService.create(other.getId(), request(new OrderItemRequest(jeans.getId(), 1)));
+
+        OrderSearchRequest search = new OrderSearchRequest();
+        search.setSize(1);
+        OrderPageResponse page1 = orderService.getOrders(member.getId(), search);
+
+        assertThat(page1.getTotalCount()).isEqualTo(2);   // 남의 주문은 세지 않는다
+        assertThat(page1.getOrders()).hasSize(1);
+        assertThat(page1.getOrders().get(0).getId()).isEqualTo(second.getId());
+        assertThat(page1.getOrders().get(0).getItemCount()).isEqualTo(2);
+
+        search.setPage(2);
+        OrderPageResponse page2 = orderService.getOrders(member.getId(), search);
+        assertThat(page2.getOrders()).extracting(o -> o.getId()).containsExactly(first.getId());
+    }
+
+    @Test
+    void 주문이_없으면_빈_목록() {
+        OrderPageResponse page = orderService.getOrders(member.getId(), new OrderSearchRequest());
+
+        assertThat(page.getOrders()).isEmpty();
+        assertThat(page.getTotalCount()).isZero();
+    }
+
+    @Test
+    void 주문_상세는_주문_시점_가격과_상품을_준다() {
+        OrderResponse created = orderService.create(member.getId(), request(
+                new OrderItemRequest(tshirt.getId(), 2), new OrderItemRequest(jeans.getId(), 1)));
+
+        OrderDetailResponse detail = orderService.getOrder(member.getId(), created.getId());
+
+        assertThat(detail.getId()).isEqualTo(created.getId());
+        assertThat(detail.getStatus()).isEqualTo(OrderStatus.CREATED);
+        assertThat(detail.getTotalPrice()).isEqualTo(60000);
+        assertThat(detail.getOrderedAt()).isNotNull();
+        assertThat(detail.getItems()).hasSize(2);
+        assertThat(detail.getItems().get(0).getProductName()).isEqualTo("반팔 티셔츠");
+        assertThat(detail.getItems().get(0).getOrderPrice()).isEqualTo(15000);
+        assertThat(detail.getItems().get(0).getQuantity()).isEqualTo(2);
+    }
+
+    @Test
+    void 남의_주문_상세는_ORDER_NOT_FOUND() {
+        OrderResponse created = orderService.create(member.getId(), request(new OrderItemRequest(tshirt.getId(), 1)));
+        Member other = Member.create("other@test.com", "encoded", "김철수");
+        memberMapper.save(other);
+
+        assertThatThrownBy(() -> orderService.getOrder(other.getId(), created.getId()))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    @Test
+    void 없는_주문_상세는_ORDER_NOT_FOUND() {
+        assertThatThrownBy(() -> orderService.getOrder(member.getId(), 999_999L))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(ErrorCode.ORDER_NOT_FOUND);
     }
 
     private OrderCreateRequest request(OrderItemRequest... items) {
